@@ -1,0 +1,22 @@
+.errorMessage {
+  position: static;
+  display: none;
+}
+.errorMessage.show {
+  display: block;
+}
+.textInput .fieldLabel {
+  position: static;
+  clip: none;
+  padding: auto;
+  border: auto;
+  height: auto;
+  width: auto;
+  overflow: visible;
+  text-align: left;
+  display: block;
+}
+.captcha-container .captcha-inputs .refresh,
+.captcha-container .captcha-inputs .audio {
+  margin-top: 20px;
+}

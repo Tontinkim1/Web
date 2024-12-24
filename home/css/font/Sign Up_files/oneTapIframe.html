@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<!-- saved from url=(0176)https://www.paypalobjects.com/consumeronboarding/html/oneTapIframe.html?clientId=76862753678-9l8i0gh7kv9mi12drrka4pj54ee2rj9v.apps.googleusercontent.com&mode=web&context=signup -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+        <script>
+            function getKey(key) {
+                const regexS = '[\\?&]' + key + '=([^&#]*)';
+                const regex = new RegExp(regexS);
+                const results = regex.exec(window.location.href);
+                return results !== null ? results[1] : '';
+            }
+
+            const clientId = getKey('clientId');
+            const context = getKey('context');
+
+            function loadOneTap() {
+                const CONSTANTS = {
+                    ONETAP: 'oneTap',
+                    METHODS: {
+                        oneTapAvailable: 'oneTapAvailable',
+                        oneTapAccept: 'oneTapAccept',
+                        oneTapCanceled: 'oneTapCanceled',
+                        oneTapNoSession: 'oneTapNoSession',
+                    },
+                };
+                function handleOneTapAvailableResult(credentialResponse) {
+                    const { credential, client_id } = credentialResponse || {};
+
+                    window.parent.postMessage(
+                        JSON.stringify({
+                            source: CONSTANTS.ONETAP,
+                            method: CONSTANTS.METHODS.oneTapAccept,
+                            sessionExists: 'true',
+                            idToken: credential,
+                            clientId: client_id,
+                        }),
+                        'https://www.paypal.com',
+                    );
+                }
+                function handleError(error) {
+                    const postMsgPayload = {
+                        source: CONSTANTS.ONETAP,
+                        error,
+                    };
+                    window.parent.postMessage(
+                        JSON.stringify(postMsgPayload),
+                        'https://www.paypal.com',
+                    );
+                }
+                function initializeGoogleOneTap() {
+                    google.accounts.id.initialize({
+                        client_id: clientId,
+                        cancel_on_tap_outside: false,
+                        context,
+                        state_cookie_domain: 'paypal.com',
+                        callback: handleOneTapAvailableResult,
+                    });
+                    google.accounts.id.prompt((notification) => {
+                        if (notification.isDisplayed()) {
+                            return window.parent.postMessage(
+                                JSON.stringify({
+                                    source: CONSTANTS.ONETAP,
+                                    method: CONSTANTS.METHODS.oneTapAvailable,
+                                    sessionExists: 'true',
+                                }),
+                                'https://www.paypal.com',
+                            );
+                        }
+
+                        if (notification.isNotDisplayed()) {
+                            handleError({
+                                type: notification.getMomentType(),
+                                reason: notification.getNotDisplayedReason(),
+                                method: CONSTANTS.METHODS.oneTapNoSession,
+                            });
+                        } else if (notification.isSkippedMoment()) {
+                            handleError({
+                                type: notification.getMomentType(),
+                                reason: notification.getSkippedReason(),
+                                method: CONSTANTS.METHODS.oneTapCanceled,
+                            });
+                        } else if (notification.isDismissedMoment()) {
+                            handleError({
+                                type: notification.getMomentType(),
+                                reason: notification.getDismissedReason(),
+                                method: CONSTANTS.METHODS.oneTapCanceled,
+                            });
+                        } else {
+                            handleError(
+                                {
+                                    type: DISPLAY_ERROR_REASONS.unknownReason,
+                                    message: 'One Tap failed',
+                                },
+                                CONSTANTS.METHODS.oneTapCanceled,
+                            );
+                        }
+                    });
+                }
+                initializeGoogleOneTap();
+            }
+
+            window.onGoogleLibraryLoad = loadOneTap;
+        </script>
+        <script src="./client" async="" defer=""></script>
+    </head>
+    <body>
+
+</body></html>
